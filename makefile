@@ -7,7 +7,15 @@ ENV_NAME = rag_env
 
 # Create conda environment from environment.yml
 setup-env:
+	# Create conda environment if it doesn't exist
 	conda env create -f environment.yml -n $(ENV_NAME) || echo "Environment '$(ENV_NAME)' already exists"
+	# Create .env file from template if it doesn't exist
+	@if [ ! -f .env ]; then \
+		echo "Creating .env file from template..."; \
+		cp .env.example .env; \
+	else \
+		echo ".env already exists. Skipping."; \
+	fi
 
 # Activate conda environment (for interactive usage)
 activate-env:
