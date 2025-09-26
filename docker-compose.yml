@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: uvicorn backend.app.api.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+    env_file:
+      - .env   # <- root-level env file
+    depends_on:
+      - weaviate
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: streamlit run frontend/chat.py --server.port=8501 --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./frontend:/app/frontend
+    env_file:
+      - .env   # <- root-level env file
+    depends_on:
+      - backend
+
+  weaviate:
+    image: semitechnologies/weaviate:latest
+    ports:
+      - "8080:8080"
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: "./weaviate_data"
+      ENABLE_MODULES: "text2vec-transformers"
+      TRANSFORMERS_INFERENCE_API: "http://t2v-transformers:8080"
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+
+volumes:
+  weaviate_data:
