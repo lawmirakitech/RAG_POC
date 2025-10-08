@@ -1,38 +1,30 @@
 version: "3.8"
 
 services:
-  backend:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-    command: uvicorn backend.app.api.main:app --host 0.0.0.0 --port 8000 --reload
+    command: >
+      sh -c "
+      uvicorn backend.app.api.main:app --host 0.0.0.0 --port 8000 --reload &
+      streamlit run frontend/chat.py --server.port=8501 --server.address=0.0.0.0
+      "
     ports:
-      - "8000:8000"
+      - "8000:8000"   # Backend
+      - "8501:8501"   # Frontend
     volumes:
       - ./backend:/app/backend
-    env_file:
-      - .env   # <- root-level env file
-    depends_on:
-      - weaviate
-
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    command: streamlit run frontend/chat.py --server.port=8501 --server.address=0.0.0.0
-    ports:
-      - "8501:8501"
-    volumes:
       - ./frontend:/app/frontend
     env_file:
-      - .env   # <- root-level env file
+      - .env
     depends_on:
-      - backend
+      - weaviate
 
   weaviate:
     image: semitechnologies/weaviate:latest
     ports:
-      - "8080:8080"
+      - "8081:8080"
     environment:
       QUERY_DEFAULTS_LIMIT: 25
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"

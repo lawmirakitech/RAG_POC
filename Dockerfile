@@ -9,6 +9,7 @@ COPY environment.yml .
 
 # Create environment named rag_env
 RUN conda env create -f environment.yml -n rag_env
+ENV PATH=/opt/conda/envs/rag_env/bin:$PATH
 
 # Ensure all future commands use rag_env
 SHELL ["conda", "run", "-n", "rag_env", "/bin/bash", "-c"]
