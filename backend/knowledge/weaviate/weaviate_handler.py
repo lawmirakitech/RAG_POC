@@ -5,8 +5,9 @@ from weaviate.classes.init import Auth
 from weaviate.classes.query import Filter
 import logging
 from typing import List,Optional, Dict, Any
-from backend.llm.embeddings.embeddings import Embeddings
+from backend.llm.embeddings.sentencetransformer_embeddings import SentenceTransformerEmbeddings
 from backend.app.core.config import settings
+from backend.llm.embeddings.service import get_default_embedding_service
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ class WeaviateHandler:
         self.weaviate_api_key = weaviate_api_key
         self.model_name = model_name
         self.collection_name = collection_name
-        self.embedding = Embeddings()
+        self.embedding = get_default_embedding_service()
         self.client = self._initialize_weaviate_client()
         self._setup_collection_schema()
 
@@ -112,7 +113,7 @@ class WeaviateHandler:
                     batch_objects.append(
                         collection.data.insert(
                             properties=data_object,
-                            vector=embedding.flatten().tolist(),
+                            vector=embedding,
 
                         )
                     )
@@ -146,7 +147,7 @@ class WeaviateHandler:
 
         # Perform vector search
         collection = self.client.collections.get(str(self.collection_name))
-        query_embeddings = self.embedding.get_embeddings(query).tolist()[0]
+        query_embeddings = self.embedding.get_embeddings(query)
         response = self._vector_search(collection, query_embeddings)
         data=[{"uuid": o.uuid, "properties": o.properties} for o in response.objects]
         source=data[0]['properties']['source']
@@ -177,7 +178,7 @@ if __name__ == "__main__":
             model_name=settings.EMBEDDING_MODEL,
             collection_name="ChatDemo")
     
-    # weaviatehandler.upload_chunks_to_weaviate("test", ["Law did it"])
+    weaviatehandler.upload_chunks_to_weaviate("test", ["Law did it"])
     text = weaviatehandler.retriver("Law")
     print(f"==========={text}===========")
 
